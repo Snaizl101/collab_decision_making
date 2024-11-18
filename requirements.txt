@@ -3,7 +3,7 @@ python-dotenv>=1.0.0  # Environment variable management
 pyyaml>=6.0.1        # Configuration management
 
 # Audio Processing & Transcription
-openai-whisper>=20231117  # Audio transcription
+whisper==1.1.10  # Audio transcription
 speechrecognition>=3.10.0 # Alternative transcription
 pydub>=0.25.1            # Audio file handling
 
