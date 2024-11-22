@@ -13,25 +13,39 @@ class CLIConfig:
 
 
 class CLIInterface(ABC):
-    """Interface for CLI"""
-
     @abstractmethod
     def run(self) -> None:
-        """
-        Start the CLI application.
-        Main entry point that runs the CLI
-        """
+        """Main CLI entrypoint"""
         pass
 
     @abstractmethod
-    def handle_input(self, command: str, args: CLIConfig) -> None:
-        """
-        Handles user input commands and arguments
+    def process(self, input_dir: str, output_dir: str, verbose: bool) -> None:
+        """Process meeting recordings"""
+        pass
 
-        Args:
-            command: The command to execute
-            args: Dicitionary of command arguments
-        """
+    @abstractmethod
+    def status(self) -> None:
+        """Show processing status"""
+        pass
+
+    @abstractmethod
+    def report(self) -> None:
+        """Generate analysis report"""
+        pass
+
+    @abstractmethod
+    def display_status(self, status: str, progress: Optional[float] = None) -> None:
+        """Display processing status"""
+        pass
+
+    @abstractmethod
+    def display_error(self, error: str) -> None:
+        """Display error messages"""
+        pass
+
+    @abstractmethod
+    def cleanup(self) -> None:
+        """Cleanup operations"""
         pass
 
 
