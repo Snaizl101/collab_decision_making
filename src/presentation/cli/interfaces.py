@@ -1,51 +1,61 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Dict, Any
 
 
-@dataclass
-class CLIConfig:
-    """Basic class for CLI input options"""
-    input_dir: Path
-    output_dir: Path
-    verbose: bool = False
+class UserInterface(ABC):
+    """Base interface for user interactions"""
 
-
-class CLIInterface(ABC):
     @abstractmethod
-    def run(self) -> None:
-        """Main CLI entrypoint"""
+    def process_audio(self, input_dir: Path, output_dir: Path, verbose: bool = False) -> None:
+        """
+        Process audio files from input directory
+
+        Args:
+            input_dir: Directory containing audio files
+            output_dir: Directory for output files
+            verbose: Whether to show detailed progress
+        """
         pass
 
     @abstractmethod
-    def process(self, input_dir: str, output_dir: str, verbose: bool) -> None:
-        """Process meeting recordings"""
+    def generate_report(self, session_id: str, format: str = 'html') -> None:
+        """
+        Generate analysis report
+
+        Args:
+            session_id: ID of the processing session
+            format: Output format (html, pdf)
+        """
         pass
 
     @abstractmethod
-    def status(self) -> None:
-        """Show processing status"""
+    def show_status(self, session_id: Optional[str] = None) -> None:
+        """
+        Show processing status
+
+        Args:
+            session_id: Optional specific session to show status for
+        """
         pass
 
     @abstractmethod
-    def report(self) -> None:
-        """Generate analysis report"""
-        pass
+    def display_progress(self, message: str, percentage: Optional[float] = None) -> None:
+        """
+        Display progress information
 
-    @abstractmethod
-    def display_status(self, status: str, progress: Optional[float] = None) -> None:
-        """Display processing status"""
+        Args:
+            message: Progress message to display
+            percentage: Optional completion percentage
+        """
         pass
 
     @abstractmethod
     def display_error(self, error: str) -> None:
-        """Display error messages"""
+        """
+        Display error message
+
+        Args:
+            error: Error message to display
+        """
         pass
-
-    @abstractmethod
-    def cleanup(self) -> None:
-        """Cleanup operations"""
-        pass
-
-
