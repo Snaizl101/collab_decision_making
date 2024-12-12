@@ -1,25 +1,10 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, Dict, List, Any
-from enum import Enum
-
-
-class OutputFormat(Enum):
-    """Supported output formats for reports"""
-    HTML = 'html'
-    PDF = 'pdf'
-
-
-class ProcessingStatus(Enum):
-    """Status of processing tasks"""
-    PENDING = 'pending'
-    PROCESSING = 'processing'
-    COMPLETED = 'completed'
-    FAILED = 'failed'
-
 
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Any
+from custom_types import OutputFormat, ProcessingStatus
 
 
 class UserInterface(ABC):
@@ -40,10 +25,9 @@ class UserInterface(ABC):
         Returns:
             str: Session ID
         """
-        pass
 
     @abstractmethod
-    def generate_report(self, session_id: str, format: OutputFormat = OutputFormat.HTML) -> Path:
+    def generate_report(self, session_id: str, output_dir: Path, format: OutputFormat = OutputFormat.HTML) -> Path:
         """
         Generate and return path to analysis report
 
@@ -54,5 +38,3 @@ class UserInterface(ABC):
         Returns:
             Path: Path to generated report
         """
-        pass
-

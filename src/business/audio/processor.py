@@ -1,9 +1,11 @@
-class AudioProcessor:
-    def process(self, input_dir, output_dir):
-        print(f"Dummy processor: Would process files from {input_dir} to {output_dir}")
+"""
+Requirements:
+    - Process different audio formats (WAV, MP3, M4A)
+    - Extract metadata (duration, time, format specs, speakers)
+    - Save audio files
+    - Handle multi-speaker audio
+    - Interface with the transcription system
+    - Track processing status
+"""
 
-    def generate_report(self, session_id, format):
-        print(f"Dummy processor: Would generate {format} report for session {session_id}")
-
-    def get_status(self, session_id=None):
-        return f"Dummy processor: Status for session {session_id if session_id else 'all'}"
+from abc import ABC, abstractmethod
