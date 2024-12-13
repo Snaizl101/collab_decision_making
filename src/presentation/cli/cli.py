@@ -2,8 +2,8 @@ import click
 from pathlib import Path
 from typing import Optional, Dict, Any, Callable
 
-from presentation.cli.interfaces import UserInterface
-from business.audio.processor import AudioProcessor
+from presentation.cli.base import UserInterface
+from business.audio.processors import AudioProcessor
 from custom_types import OutputFormat, ProcessingStatus
 
 
