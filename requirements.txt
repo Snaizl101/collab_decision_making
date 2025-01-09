@@ -1,19 +1,20 @@
 # Core dependencies
-python-dotenv>=1.0.0  # Environment variable management
+python-dotenv>=1.0.1  # Environment variable management
 pyyaml>=6.0.1        # Configuration management
 
 # Audio Processing & Transcription
-openai-whisper  # Audio transcription (free localy)
-speechrecognition>=3.10.0 # Alternative transcription
-pydub>=0.25.1            # Audio file handling
+torch>=2.3.1         # Required for stable-ts
+torchaudio>=2.3.1    # Required for stable-ts
+stable-ts==2.18     # Combined transcription and speaker diarization
+pydub>=0.25.1        # Audio file handling
 
 # NLP & Analysis
 spacy>=3.7.2             # Core NLP functionality
 google-generativeai>=0.3.2  # Gemini API
 
 # Storage
-sqlalchemy>=2.0.23       # Database ORM
-alembic>=1.12.1         # Database migrations
+sqlalchemy>=2.0.36       # Database ORM
+alembic>=1.13         # Database migrations
 
 # CLI & Presentation
 click>=8.1.7            # CLI framework
