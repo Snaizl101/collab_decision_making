@@ -1,15 +1,14 @@
 from enum import Enum
 
 
-class OutputFormat(Enum):
-    """Supported output formats for reports"""
-    HTML = 'html'
-    PDF = 'pdf'
+class OutputFormat(str, Enum):
+    HTML = "html"
+    PDF = "pdf"
+    TEXT = "txt"
 
 
-class ProcessingStatus(Enum):
-    """Status of processing tasks"""
-    PENDING = 'pending'
-    PROCESSING = 'processing'
-    COMPLETED = 'completed'
-    FAILED = 'failed'
+class ProcessingStatus(str, Enum):
+    STARTED = "Started"
+    PROCESSING = "Processing"
+    COMPLETED = "Completed"
+    FAILED = "Failed"
