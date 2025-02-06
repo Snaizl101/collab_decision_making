@@ -131,6 +131,40 @@ class TogetherLLMClient(LLMClientInterface):
         except Exception as e:
             raise LLMAPIError(f"Hierarchy extraction failed: {str(e)}")
 
+    async def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+        """Analyze text sentiment using LLM with JSON mode"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Analyze the sentiment of the text. Return a sentiment score between -1 (very negative) and 1 (very positive), and a confidence score between 0 and 1. Respond only in JSON format."
+                    },
+                    {
+                        "role": "user",
+                        "content": text
+                    }
+                ],
+                temperature=0.1,
+                response_format={
+                    "type": "json_object",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "sentiment_score": {"type": "number", "minimum": -1, "maximum": 1},
+                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                        },
+                        "required": ["sentiment_score", "confidence"]
+                    }
+                }
+            )
+
+            return json.loads(response.choices[0].message.content)
+
+        except Exception as e:
+            raise LLMAPIError(f"Sentiment analysis failed: {str(e)}")
+
     async def close(self):
         """Nothing to close for Together client"""
         pass

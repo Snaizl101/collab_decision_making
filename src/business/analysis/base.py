@@ -14,3 +14,8 @@ class LLMClientInterface(ABC):
     async def extract_hierarchies(self, topics: List[str], context: str) -> Dict[str, Any]:
         """Extract topic hierarchies and relationships"""
         pass
+
+    @abstractmethod
+    async def analyze_sentiment(self, text: str) -> Dict[str, Any]:
+        """Analyze text sentiment using LLM"""
+        pass
