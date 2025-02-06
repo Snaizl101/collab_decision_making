@@ -14,3 +14,10 @@ build/
 htmlcov/
 .pytest_cache/
 .DS_Store
+
+# Add to .gitignore
+test_input/
+data/
+debug_output/
+test_output/
+tools/
