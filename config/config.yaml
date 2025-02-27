@@ -1,0 +1,7 @@
+llm:
+  together_api_key: ${TOGETHER_API_KEY}  # API key will be read from env variable
+  model: "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
+
+storage:
+  db_path: "data/db/discussion_analysis.db"
+  file_storage_path: "data/files"

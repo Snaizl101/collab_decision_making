@@ -1,170 +1,241 @@
 from pathlib import Path
-from typing import Optional, List, Dict
-from dataclasses import dataclass
+from typing import Optional, List, Dict, Any
 from stable_whisper import load_model
+from pyannote.audio import Pipeline
+from pyannote.audio import Audio
+import torch
 from pydub import AudioSegment
-from .base import AudioProcessor, AudioMetadata, ProcessingConfig, DiarizationResult, SpeakerSegment, \
-    AudioProcessingError
+from .models import AudioMetadata, TranscriptionSegment, SpeakerSegment, ProcessingConfig, ProcessingResult
+from .exceptions import ProcessingError
 
 
-@dataclass
-class TranscriptionSegment:
-    text: str
-    start: float
-    end: float
-    speaker: str
-    confidence: float
+class CombinedProcessor:
+    """Handles audio processing using stable-ts for transcription and pyannote.audio for diarization.
 
+    Key Features:
+    - Transcribes audio to text
+    - Identifies different speakers
+    - Handles audio preprocessing and format conversion
 
-class StableAudioProcessor(AudioProcessor):
-    def __init__(self, model_size: str = "base"):
-        """Initialize with specified model size (tiny, base, small, medium, large)"""
+    Input: Audio file (WAV, MP3, M4A)
+    Output: ProcessingResult with transcription segments and metadata
+    """
+
+    def __init__(self, stable_model_size: str = "base", auth_token: Optional[str] = None):
+        """
+        Initialize with specified stable-ts model size.
+
+        Args:
+            stable_model_size: Size of stable-ts model (tiny, base, small, medium, large)
+        """
         try:
-            self.model = load_model(model_size)
-        except Exception as e:
-            raise AudioProcessingError(f"Failed to load stable-ts model: {str(e)}")
+            # Initialize stable-ts
+            self.transcriber = load_model(stable_model_size)
 
-    def preprocess_audio(self,
-                         input_file: Path,
-                         config: ProcessingConfig) -> Path:
+            # Initialize pyannote pipeline
+            self.diarizer = Pipeline.from_pretrained(
+                "pyannote/speaker-diarization-3.1",
+                use_auth_token=auth_token
+            )
+
+            # Initialize audio loader
+            self.audio = Audio()
+
+            # Use GPU if available
+            if torch.cuda.is_available():
+                self.diarizer = self.diarizer.to(torch.device("cuda"))
+
+        except Exception as e:
+            raise ProcessingError(
+                message="Failed to load models",
+                error_type="initialization",
+                original_error=e
+            )
+
+    def process_audio(self,
+                      audio_path: Path,
+                      config: Optional[ProcessingConfig] = None,
+                      progress_callback: Optional[callable] = None) -> ProcessingResult:
+        """
+        Process audio file with transcription and speaker diarization.
+
+        Args:
+            audio_path: Path to input audio file
+            config: Processing configuration settings
+            progress_callback: Optional callback function(progress: float, message: str)
+
+        Returns:
+            ProcessingResult containing transcription and metadata
+        """
+        if not self._validate_file(audio_path):
+            raise ProcessingError(
+                message=f"Invalid audio file: {audio_path}",
+                error_type="validation"
+            )
+
+        config = config or ProcessingConfig()
+        processed_audio = None
+
+        try:
+            # Preprocessing
+            if progress_callback:
+                progress_callback(0.1, "Preprocessing audio...")
+
+            processed_audio = self.preprocess_audio(audio_path, config)
+
+            # Transcription with stable-ts
+            if progress_callback:
+                progress_callback(0.3, "Starting transcription...")
+
+            transcription = self.transcriber.transcribe(
+                str(processed_audio),
+                word_timestamps=True,
+                vad=True,
+            )
+
+            # Speaker diarization with pyannote
+            if progress_callback:
+                progress_callback(0.5, "Running speaker diarization...")
+
+            diarization = self.diarizer(str(processed_audio))
+
+            # Combine results
+            if progress_callback:
+                progress_callback(0.7, "Combining transcription and speaker info...")
+
+            # Create speaker segments from diarization
+            speaker_segments = self._create_speaker_segments(diarization)
+
+            # Align transcription with speaker segments
+            transcription_segments = self._align_transcription(
+                transcription.segments,
+                speaker_segments
+            )
+
+            # Extract metadata
+            metadata = self.get_metadata(audio_path)
+
+            if progress_callback:
+                progress_callback(1.0, "Processing complete")
+
+            return ProcessingResult(
+                metadata=metadata,
+                transcription_segments=transcription_segments,
+                speaker_segments=speaker_segments,
+                total_speakers=len(set(seg.speaker_id for seg in speaker_segments))
+            )
+
+        except Exception as e:
+            raise ProcessingError(
+                message=f"Processing failed: {str(e)}",
+                error_type="processing",
+                original_error=e
+            )
+        finally:
+            if processed_audio and Path(processed_audio).exists():
+                Path(processed_audio).unlink()
+
+    def _create_speaker_segments(self, diarization) -> List[SpeakerSegment]:
+        """Convert pyannote diarization output to speaker segments"""
+        segments = []
+        for turn, _, speaker in diarization.itertracks(yield_label=True):
+            segments.append(SpeakerSegment(
+                start_time=turn.start,
+                end_time=turn.end,
+                speaker_id=speaker,
+                text=""  # Will be filled during alignment
+            ))
+        return sorted(segments, key=lambda x: x.start_time)
+
+    def _align_transcription(self,
+                             stable_segments: List[Any],
+                             speaker_segments: List[SpeakerSegment]) -> List[TranscriptionSegment]:
+        """Align stable-ts transcription with speaker segments"""
+        transcription_segments = []
+
+        for word in stable_segments:
+            # Find overlapping speaker segment
+            start_time = float(word.start)  # Ensure float type
+            end_time = float(word.end)  # Ensure float type
+
+            # Find speaker with maximum overlap
+            max_overlap = 0
+            assigned_speaker = None
+
+            for speaker_seg in speaker_segments:
+                overlap_start = max(start_time, speaker_seg.start_time)
+                overlap_end = min(end_time, speaker_seg.end_time)
+
+                if overlap_end > overlap_start:
+                    overlap_duration = overlap_end - overlap_start
+                    if overlap_duration > max_overlap:
+                        max_overlap = overlap_duration
+                        assigned_speaker = speaker_seg.speaker_id
+
+            # Create transcription segment
+            if assigned_speaker:
+                transcription_segments.append(TranscriptionSegment(
+                    text=str(word.text),
+                    start=start_time,
+                    end=end_time,
+                    speaker=assigned_speaker,
+                ))
+
+                # Update speaker segment text
+                for seg in speaker_segments:
+                    if seg.speaker_id == assigned_speaker and \
+                            start_time >= seg.start_time and \
+                            end_time <= seg.end_time:
+                        seg.text += f" {word.text}"
+                        break
+
+        return transcription_segments
+
+    def preprocess_audio(self, input_file: Path, config: ProcessingConfig) -> Path:
         """Preprocess audio file to match required specifications"""
         try:
-            # Load audio
             audio = AudioSegment.from_file(str(input_file))
-
-            # Apply audio preprocessing
             audio = (audio
                      .set_frame_rate(config.target_sample_rate)
                      .set_channels(config.target_channels)
-                     .normalize())  # Normalize audio levels
+                     .normalize())
 
-            # Create temporary processed file
             temp_path = input_file.parent / f"temp_processed_{input_file.name}"
-
-            # Export with specific format
             audio.export(
                 temp_path,
                 format=config.target_format,
                 parameters=["-ac", "1", "-ar", "16000"]
             )
-
             return temp_path
 
         except Exception as e:
-            raise AudioProcessingError(f"Audio preprocessing failed: {str(e)}")
-
-    def process(self,
-                input_file: Path,
-                output_dir: Path,
-                config: Optional[ProcessingConfig] = None,
-                progress_callback: Optional[callable] = None) -> Dict[str, any]:
-        """Process audio file with combined transcription and diarization"""
-        if not self.validate_file(input_file):
-            raise AudioProcessingError(f"Invalid audio file: {input_file}")
-
-        # Use default config if none provided
-        config = config or ProcessingConfig()
-
-        try:
-            # Preprocess audio
-            if progress_callback:
-                progress_callback(0.1, "Preprocessing audio...")
-
-            processed_audio = self.preprocess_audio(input_file, config)
-
-            if progress_callback:
-                progress_callback(0.3, "Starting transcription and diarization...")
-
-            # Process with stable-ts
-            result = self.model.transcribe(
-                str(processed_audio),
-                word_timestamps=True,
-                vad=True,
-                detect_disfluencies=True
+            raise ProcessingError(
+                message="Audio preprocessing failed",
+                error_type="preprocessing",
+                original_error=e
             )
-
-            if progress_callback:
-                progress_callback(0.7, "Processing results...")
-
-            # Convert result to our data structure
-            segments = []
-            speaker_segments = []
-            current_speaker = None
-            segment_start = None
-
-            for word in result.segments:
-                if word.speaker != current_speaker:
-                    if segment_start is not None:
-                        speaker_segments.append(
-                            SpeakerSegment(
-                                start_time=segment_start,
-                                end_time=word.start,
-                                speaker_id=current_speaker
-                            )
-                        )
-                    current_speaker = word.speaker
-                    segment_start = word.start
-
-                segments.append(
-                    TranscriptionSegment(
-                        text=word.text,
-                        start=word.start,
-                        end=word.end,
-                        speaker=word.speaker,
-                        confidence=word.confidence
-                    )
-                )
-
-            # Add final speaker segment
-            if segment_start is not None:
-                speaker_segments.append(
-                    SpeakerSegment(
-                        start_time=segment_start,
-                        end_time=segments[-1].end,
-                        speaker_id=current_speaker
-                    )
-                )
-
-            diarization_result = DiarizationResult(
-                segments=speaker_segments,
-                total_speakers=len(set(seg.speaker_id for seg in speaker_segments)),
-                processed_audio=processed_audio
-            )
-
-            if progress_callback:
-                progress_callback(1.0, "Processing complete")
-
-            return {
-                'processed_audio': processed_audio,
-                'transcription': segments,
-                'diarization': diarization_result
-            }
-
-        except Exception as e:
-            raise AudioProcessingError(f"Processing failed: {str(e)}")
-        finally:
-            # Cleanup temporary processed file if it exists
-            if 'processed_audio' in locals():
-                processed_audio.unlink(missing_ok=True)
 
     def get_metadata(self, audio_file: Path) -> AudioMetadata:
         """Extract metadata from audio file"""
         try:
             audio = AudioSegment.from_file(str(audio_file))
             return AudioMetadata(
-                duration=len(audio) / 1000.0,  # Convert to seconds
-                format=audio_file.suffix[1:],  # Remove the dot
+                duration=len(audio) / 1000.0,
+                format=audio_file.suffix[1:],
                 sample_rate=audio.frame_rate,
                 channels=audio.channels,
                 file_size=audio_file.stat().st_size
             )
         except Exception as e:
-            raise AudioProcessingError(f"Metadata extraction failed: {str(e)}")
+            raise ProcessingError(
+                message="Metadata extraction failed",
+                error_type="metadata",
+                original_error=e
+            )
 
-    def validate_file(self, file_path: Path) -> bool:
+    def _validate_file(self, file_path: Path) -> bool:
         """Validate audio file format and existence"""
         if not file_path.exists():
             return False
-
         SUPPORTED_FORMATS = {'.wav', '.mp3', '.m4a', '.flac'}
         return file_path.suffix.lower() in SUPPORTED_FORMATS
