@@ -13,6 +13,7 @@ from src.presentation.cli.base import UserInterface
 from src.business.pipeline import Pipeline
 from src.business.audio.processors import CombinedProcessor
 from src.business.analysis.topic.analyzer import TopicAnalyzer
+from src.business.analysis.sentiment.analyzer import SentimentAnalyzer
 from business.analysis.llm_client import TogetherLLMClient
 from src.storage.dao.sqlite.sqlite_dao import SQLiteDAO
 from src.storage.files.local_storage import LocalFileStorage
@@ -74,6 +75,8 @@ class CLI(UserInterface):
 
         self.topic_analyzer = TopicAnalyzer(self.llm_client)
 
+        self.sentiment_analyzer = SentimentAnalyzer(self.llm_client)
+
         self.report_generator = HTMLReportGenerator(
             Path("src/presentation/reports/templates")
         )
@@ -83,6 +86,7 @@ class CLI(UserInterface):
             dao=self.dao,
             file_storage=self.file_storage,
             topic_analyzer=self.topic_analyzer,
+            sentiment_analyzer=self.sentiment_analyzer,
             report_generator=self.report_generator
         )
 

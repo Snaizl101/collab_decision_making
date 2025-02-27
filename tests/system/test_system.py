@@ -149,14 +149,12 @@ def test_sqlite_dao_comprehensive(tmp_path):
             "start_time": 0.0,
             "end_time": 10.0,
             "text": "Hello, this is a test.",
-            "confidence": 0.95
         },
         {
             "speaker_id": "speaker2",
             "start_time": 10.0,
             "end_time": 20.0,
             "text": "Yes, this is a test response.",
-            "confidence": 0.92
         }
     ]
 
@@ -203,7 +201,6 @@ def test_sqlite_dao_comprehensive(tmp_path):
     agreement_data = {
         "speaker_id": "speaker2",
         "agreement_type": "agree",
-        "confidence_score": 0.9,
         "timestamp": 16.0
     }
 

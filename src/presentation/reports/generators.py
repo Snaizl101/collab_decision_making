@@ -1,4 +1,5 @@
 # src/presentation/reports/generators.py
+
 from pathlib import Path
 from typing import Dict, Any, List
 from datetime import datetime
@@ -8,7 +9,12 @@ from .base import ReportGeneratorInterface
 
 
 class HTMLReportGenerator(ReportGeneratorInterface):
-    """Generates HTML reports from discussion analysis data"""
+    """Generates interactive HTML reports with visualizations.
+
+    - Topic timeline visualization
+    - Sentiment analysis graphs
+
+    """
 
     def __init__(self, template_dir: Path):
         """Initialize the HTML report generator"""
@@ -30,13 +36,11 @@ class HTMLReportGenerator(ReportGeneratorInterface):
             if not data.get('topics') or not data.get('transcription'):
                 raise ReportGenerationError("Missing required data fields")
 
-            # Get template
-            template = self.env.get_template('discussion_analysis.html')
-
             # Prepare visualization data
             viz_data = self._prepare_visualization_data(data)
 
             # Render template
+            template = self.env.get_template('discussion_analysis.html')
             html = template.render(
                 data=data,
                 viz_data=viz_data,
@@ -58,7 +62,8 @@ class HTMLReportGenerator(ReportGeneratorInterface):
         return {
             'timeline': self._create_timeline_data(data['topics']),
             'speakers': self._create_speaker_data(data['transcription']),
-            'hierarchy': self._create_hierarchy_data(data)
+            'hierarchy': self._create_hierarchy_data(data),
+            'sentiment': self._create_sentiment_data(data)  # Add sentiment data preparation
         }
 
     def _create_timeline_data(self, topics: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -88,4 +93,29 @@ class HTMLReportGenerator(ReportGeneratorInterface):
             'nodes': [{'id': t['name'], 'value': t.get('importance_score', 1.0)}
                       for t in topics],
             'links': []
+        }
+
+    def _create_sentiment_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create sentiment visualization data"""
+        # Initialize with default sentiment data if not available
+        if 'sentiment' not in data:
+            return {
+                'overall_sentiment': 0,
+                'timeline': [],
+                'speaker_sentiments': {}
+            }
+
+        sentiment_data = data.get('sentiment', {})
+        return {
+            'overall_sentiment': sentiment_data.get('overall_sentiment', 0),
+            'timeline': [
+                {
+                    'timestamp': item['timestamp'],
+                    'sentiment_score': item['sentiment_score'],
+                    'speaker_id': item['speaker_id'],
+                    'text': item['text']
+                }
+                for item in sentiment_data.get('sentiment_timeline', [])
+            ],
+            'speaker_sentiments': sentiment_data.get('speaker_sentiments', {})
         }

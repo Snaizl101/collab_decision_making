@@ -14,7 +14,6 @@ class TopicSchema(BaseModel):
     name: str = Field(description="The name or title of the discussed topic")
     start_time: float = Field(description="When the topic discussion started (in seconds)")
     end_time: float = Field(description="When the topic discussion ended (in seconds)")
-    importance: float = Field(description="Importance score between 0 and 1")
 
 
 class TopicsResponse(BaseModel):
@@ -25,46 +24,6 @@ class HierarchyResponse(BaseModel):
     hierarchy: Dict[str, List[str]] = Field(
         description="Topic hierarchy with parent topics as keys and lists of child topics as values"
     )
-
-
-# Argument-related schemas
-class ArgumentPoint(BaseModel):
-    text: str = Field(description="The text of the supporting point")
-    confidence: float = Field(description="Confidence score for this point", default=1.0)
-    evidence: str = Field(description="Evidence or context for this point", default=None)
-
-
-class ArgumentSchema(BaseModel):
-    speaker_id: str = Field(description="ID of the speaker making the argument")
-    timestamp: float = Field(description="When the argument was made (in seconds)")
-    main_claim: str = Field(description="The main point or claim being made")
-    supporting_points: List[ArgumentPoint] = Field(
-        description="Supporting points for the main claim",
-        default_factory=list
-    )
-    type: str = Field(
-        description="Type of argument (initial, support, counter, clarification, conclusion)"
-    )
-    confidence: float = Field(
-        description="Overall confidence score for this argument",
-        default=1.0
-    )
-
-
-class ArgumentAnalysisResponse(BaseModel):
-    arguments: List[ArgumentSchema] = Field(
-        description="List of arguments identified in the discussion"
-    )
-
-
-class ThreadSchema(BaseModel):
-    initial_argument_id: int = Field(description="ID of the argument that started this thread")
-    argument_ids: List[int] = Field(description="IDs of arguments in this thread")
-    summary: str = Field(description="Summary of the discussion thread")
-
-
-class ThreadAnalysisResponse(BaseModel):
-    threads: List[ThreadSchema] = Field(description="List of discussion threads")
 
 
 class TogetherLLMClient(LLMClientInterface):
@@ -152,10 +111,9 @@ class TogetherLLMClient(LLMClientInterface):
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "sentiment_score": {"type": "number", "minimum": -1, "maximum": 1},
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                            "sentiment_score": {"type": "number", "minimum": -1, "maximum": 1}
                         },
-                        "required": ["sentiment_score", "confidence"]
+                        "required": ["sentiment_score"]
                     }
                 }
             )

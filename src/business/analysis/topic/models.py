@@ -9,7 +9,6 @@ class Topic:
     name: str
     start_time: float
     end_time: float
-    importance_score: float
     topic_id: Optional[int] = None
     subtopics: List['Topic'] = None
     parent_topic: Optional[str] = None

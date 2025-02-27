@@ -22,40 +22,37 @@ class Topic:
     name: str
     start_time: float
     end_time: float
-    importance_score: float
 
 
-@dataclass
-class Argument:
-    """Database model for arguments made during discussion"""
-    argument_id: Optional[int]
-    recording_id: str
-    topic_id: int
-    speaker_id: str
-    text: str
-    start_time: float
-    end_time: float
-    type: str  # e.g., 'support', 'counter', 'clarification'
+# @dataclass
+# class Argument:
+#     """Database model for arguments made during discussion"""
+#     argument_id: Optional[int]
+#     recording_id: str
+#     topic_id: int
+#     speaker_id: str
+#     text: str
+#     start_time: float
+#     end_time: float
+#     type: str  # e.g., 'support', 'counter', 'clarification'
 
 
-@dataclass
-class Agreement:
-    """Database model for tracking agreements/disagreements"""
-    agreement_id: Optional[int]
-    recording_id: str
-    argument_id: int
-    speaker_id: str
-    type: str  # 'agree' or 'disagree'
-    confidence: float
-    timestamp: float
+# @dataclass
+# class Agreement:
+#     """Database model for tracking agreements/disagreements"""
+#     agreement_id: Optional[int]
+#     recording_id: str
+#     argument_id: int
+#     speaker_id: str
+#     type: str  # 'agree' or 'disagree'
+#     timestamp: float
 
 
-@dataclass
-class Gap:
-    """Database model for identified discussion gaps"""
-    gap_id: Optional[int]
-    recording_id: str
-    topic_id: Optional[int]
-    description: str
-    type: str  # e.g., 'missing_viewpoint', 'unclear_conclusion'
-    importance: float
+# @dataclass
+# class Gap:
+#     """Database model for identified discussion gaps"""
+#     gap_id: Optional[int]
+#     recording_id: str
+#     topic_id: Optional[int]
+#     description: str
+#     type: str  # e.g., 'missing_viewpoint', 'unclear_conclusion'

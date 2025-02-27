@@ -10,7 +10,16 @@ from .exceptions import ProcessingError
 
 
 class CombinedProcessor:
-    """Handles audio processing using stable-ts for transcription and pyannote.audio for diarization"""
+    """Handles audio processing using stable-ts for transcription and pyannote.audio for diarization.
+
+    Key Features:
+    - Transcribes audio to text
+    - Identifies different speakers
+    - Handles audio preprocessing and format conversion
+
+    Input: Audio file (WAV, MP3, M4A)
+    Output: ProcessingResult with transcription segments and metadata
+    """
 
     def __init__(self, stable_model_size: str = "base", auth_token: Optional[str] = None):
         """
@@ -170,7 +179,6 @@ class CombinedProcessor:
                     start=start_time,
                     end=end_time,
                     speaker=assigned_speaker,
-                    confidence=1.0  # Use default confidence since stable-whisper doesn't provide it
                 ))
 
                 # Update speaker segment text

@@ -5,21 +5,35 @@ from pathlib import Path
 
 from src.business.audio.processors import CombinedProcessor
 from src.business.analysis.topic.analyzer import TopicAnalyzer
+from src.business.analysis.sentiment.analyzer import SentimentAnalyzer
 from src.storage.dao.sqlite.sqlite_dao import SQLiteDAO
 from src.storage.files.local_storage import LocalFileStorage
 from src.presentation.reports.generators import HTMLReportGenerator
 
+
 class Pipeline:
+    """Coordinates entire business layer processes in a pipeline.
+
+        Flow:
+        1. Process audio file -> transcription
+        2. Analyze topics
+        3. Analyze sentiment
+        4. Store results
+        5. Generate report
+        """
+
     def __init__(self,
                  audio_processor: CombinedProcessor,
                  dao: SQLiteDAO,
                  file_storage: LocalFileStorage,
                  topic_analyzer: TopicAnalyzer,
+                 sentiment_analyzer: SentimentAnalyzer,
                  report_generator: HTMLReportGenerator):
         self.audio_processor = audio_processor
         self.dao = dao
         self.file_storage = file_storage
         self.topic_analyzer = topic_analyzer
+        self.sentiment_analyzer = sentiment_analyzer
         self.report_generator = report_generator
         self.logger = logging.getLogger(__name__)
 
@@ -39,6 +53,7 @@ class Pipeline:
             self.logger.error(f"Failed to save debug output: {e}")
 
     async def process(self, audio_path: Path) -> Path:
+        # Wrap processing in try/except to catch and log errors
         try:
             session_start = datetime.now()
             self.logger.info(f"Starting processing session at {session_start}")
@@ -57,7 +72,6 @@ class Pipeline:
                     'start_time': segment.start,
                     'end_time': segment.end,
                     'text': segment.text,
-                    'confidence': segment.confidence
                 }
                 for segment in processing_result.transcription_segments
             ]
@@ -82,20 +96,41 @@ class Pipeline:
 
             # 3. Analyze topics
             self.logger.info("Starting topic analysis...")
-            try:
-                topic_result = await self.topic_analyzer.analyze(processing_result.transcription_segments)
-                # Save topic analysis debug output
-                self._save_debug_output("topic_analysis", {
-                    'topics': [topic.__dict__ for topic in topic_result.topics],
-                    'hierarchy': topic_result.hierarchy
+            topic_result = await self.topic_analyzer.analyze(processing_result.transcription_segments)
+
+            # Save topic analysis debug output
+            self._save_debug_output("topic_analysis", {
+                'topics': [topic.__dict__ for topic in topic_result.topics],
+                'hierarchy': topic_result.hierarchy
+            })
+
+            # 4. Perform sentiment analysis
+            self.logger.info("Starting sentiment analysis...")
+            sentiment_result = await self.sentiment_analyzer.analyze(processing_result.transcription_segments)
+
+            # Save sentiment analysis debug output
+            self._save_debug_output("sentiment_analysis", {
+                'overall_sentiment': sentiment_result.overall_sentiment,
+                'timeline': [
+                    {
+                        'speaker_id': r.speaker_id,
+                        'timestamp': r.timestamp,
+                        'sentiment_score': r.sentiment_score,
+                        'text': r.text
+                    }
+                    for r in sentiment_result.sentiment_timeline
+                ],
+                'speaker_sentiments': sentiment_result.speaker_sentiments
+            })
+
+            # Store sentiment analysis results
+            for result in sentiment_result.sentiment_timeline:
+                self.dao.store_sentiment(file_id, {
+                    'speaker_id': result.speaker_id,
+                    'timestamp': result.timestamp,
+                    'sentiment_score': result.sentiment_score,
+                    'text': result.text
                 })
-            except Exception as e:
-                self.logger.error("Topic analysis failed!")
-                self.logger.error("Last 5 transcription segments for debugging:")
-                for segment in transcription_segments_dict[-5:]:
-                    self.logger.error(f"[{segment['start_time']:.2f}-{segment['end_time']:.2f}] "
-                                      f"{segment['speaker_id']}: {segment['text']}")
-                raise
 
             # Store topics
             topics_dict = []
@@ -104,25 +139,34 @@ class Pipeline:
                     'topic_name': topic.name,
                     'start_time': topic.start_time,
                     'end_time': topic.end_time,
-                    'importance_score': topic.importance_score
                 })
                 topics_dict.append({
                     'id': topic_id,
                     'name': topic.name,
                     'start_time': topic.start_time,
                     'end_time': topic.end_time,
-                    'importance_score': topic.importance_score
                 })
 
-            self.logger.info(f"Stored {len(topics_dict)} topics")
-
-            # 4. Generate report
+            # 5. Generate report
             self.logger.info("Generating final report...")
             discussion_data = {
                 'recording_id': file_id,
                 'metadata': processing_result.metadata.__dict__,
                 'transcription': transcription_segments_dict,
                 'topics': topics_dict,
+                'sentiment': {
+                    'overall_sentiment': sentiment_result.overall_sentiment,
+                    'sentiment_timeline': [
+                        {
+                            'speaker_id': r.speaker_id,
+                            'timestamp': r.timestamp,
+                            'sentiment_score': r.sentiment_score,
+                            'text': r.text
+                        }
+                        for r in sentiment_result.sentiment_timeline
+                    ],
+                    'speaker_sentiments': sentiment_result.speaker_sentiments
+                },
                 'timestamp': datetime.now().isoformat()
             }
 

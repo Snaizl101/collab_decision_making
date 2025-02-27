@@ -28,7 +28,6 @@ class TranscriptionSegment:
     start: float
     end: float
     speaker: str
-    confidence: float = 1.0
 
 
 @dataclass
@@ -46,7 +45,7 @@ class ProcessingResult:
     Attributes:
         metadata: Technical information about the processed audio
         transcription_segments: Word-level transcription with timing
-        speaker_segments: Speaker-level segments with complete utterances
+        speaker_segments: Speaker-level segments
         total_speakers: Number of unique speakers detected
     """
     metadata: AudioMetadata

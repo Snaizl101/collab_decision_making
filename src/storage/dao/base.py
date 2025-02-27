@@ -40,7 +40,6 @@ class DataAccessInterface(ABC):
                      - start_time: Start time in seconds
                      - end_time: End time in seconds
                      - text: Transcribed text
-                     - confidence: Confidence score of transcription
         """
         pass
 
@@ -59,67 +58,6 @@ class DataAccessInterface(ABC):
 
         Returns:
             topic_id: Unique identifier for the stored topic
-        """
-        pass
-
-    @abstractmethod
-    def store_argument(self, recording_id: str, topic_id: int,
-                       argument_data: Dict[str, Any]) -> int:
-        """
-        Store an analyzed argument.
-
-        Args:
-            recording_id: ID of the associated recording
-            topic_id: ID of the related topic
-            argument_data: Argument information containing:
-                         - speaker_id: ID of the speaker
-                         - start_time: Start time of the argument
-                         - end_time: End time of the argument
-                         - argument_text: The argument content
-                         - argument_type: Type of argument
-                         - conclusion: Argument conclusion
-
-        Returns:
-            argument_id: Unique identifier for the stored argument
-        """
-        pass
-
-    @abstractmethod
-    def store_agreement(self, recording_id: str, argument_id: int,
-                        agreement_data: Dict[str, Any]) -> int:
-        """
-        Store agreement/disagreement information.
-
-        Args:
-            recording_id: ID of the associated recording
-            argument_id: ID of the related argument
-            agreement_data: Agreement information containing:
-                          - speaker_id: ID of the responding speaker
-                          - agreement_type: Type of response (agree/disagree)
-                          - confidence_score: Confidence in the analysis
-                          - timestamp: When the agreement was expressed
-
-        Returns:
-            agreement_id: Unique identifier for the stored agreement
-        """
-        pass
-
-    @abstractmethod
-    def store_gap(self, recording_id: str, topic_id: Optional[int],
-                  gap_data: Dict[str, Any]) -> int:
-        """
-        Store identified discussion gaps or suggestions.
-
-        Args:
-            recording_id: ID of the associated recording
-            topic_id: Optional ID of the related topic
-            gap_data: Gap information containing:
-                     - gap_type: Type of gap identified
-                     - description: Description of the gap
-                     - importance_score: Relative importance
-
-        Returns:
-            gap_id: Unique identifier for the stored gap
         """
         pass
 
@@ -163,51 +101,6 @@ class DataAccessInterface(ABC):
 
         Returns:
             List of topics with their details
-        """
-        pass
-
-    @abstractmethod
-    def get_arguments(self, recording_id: str,
-                      topic_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Retrieve arguments for a recording.
-
-        Args:
-            recording_id: ID of the recording
-            topic_id: Optional topic filter
-
-        Returns:
-            List of arguments with their details
-        """
-        pass
-
-    @abstractmethod
-    def get_agreements(self, recording_id: str,
-                       argument_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Retrieve agreements for a recording.
-
-        Args:
-            recording_id: ID of the recording
-            argument_id: Optional argument filter
-
-        Returns:
-            List of agreements with their details
-        """
-        pass
-
-    @abstractmethod
-    def get_gaps(self, recording_id: str,
-                 topic_id: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Retrieve identified gaps for a recording.
-
-        Args:
-            recording_id: ID of the recording
-            topic_id: Optional topic filter
-
-        Returns:
-            List of gaps with their details
         """
         pass
 

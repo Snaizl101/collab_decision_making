@@ -7,7 +7,16 @@ from business.analysis.exceptions import TopicAnalysisError, ValidationError
 from src.business.audio.models import TranscriptionSegment
 
 class TopicAnalyzer:
-    """Analyzes discussion transcripts to identify and structure topics"""
+    """Analyzes discussion transcripts to identify and structure topics.
+
+    Capabilities:
+    - Extract main discussion topics
+    - Track topic progression
+    - Associate topics with timestamps
+
+    Uses LLM for:
+    - Topic identification
+    """
 
     def __init__(self, llm_client: LLMClientInterface):
         self.llm_client = llm_client
@@ -78,7 +87,6 @@ class TopicAnalyzer:
                     name=t['name'],
                     start_time=float(t['start_time']),
                     end_time=float(t['end_time']),
-                    importance_score=float(t['importance'])
                 )
                 for t in data['topics']
             ]
