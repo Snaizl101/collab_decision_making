@@ -1,4 +1,3 @@
-```markdown
 # System Architecture
 
 The Discussion Analysis System follows a layered architecture:
@@ -21,4 +20,3 @@ See system_architecture.html for the complete visual representation.
 ### Storage Layer
 - SQLite Database: Stores all analysis results and relationships
 - File Storage: Manages audio files and generated reports
-```
