@@ -4,7 +4,7 @@ from typing import Optional, Dict, List, Any
 
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Any
-from custom_types import OutputFormat, ProcessingStatus
+from src.custom_types import OutputFormat, ProcessingStatus
 
 
 class UserInterface(ABC):

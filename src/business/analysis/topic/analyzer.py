@@ -1,9 +1,14 @@
+"""
+Topic analyzer module.
+Uses transcribed text to identify and structure discussion topics.
+Uses LLM to extract topics and hierarchical relationships.
+"""
 from typing import List, Dict, Any
 import json
 import logging
-from business.analysis.base import LLMClientInterface
-from business.analysis.topic.models import Topic, TopicAnalysisResult
-from business.analysis.exceptions import TopicAnalysisError, ValidationError
+from src.business.analysis.base import LLMClientInterface
+from src.business.analysis.topic.models import Topic, TopicAnalysisResult
+from src.business.analysis.exceptions import TopicAnalysisError, ValidationError
 from src.business.audio.models import TranscriptionSegment
 
 class TopicAnalyzer:

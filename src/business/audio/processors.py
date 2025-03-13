@@ -1,3 +1,8 @@
+"""
+Audio processing module.
+Handles audio file processing, transcription, and speaker diarization.
+Combines multiple audio processing libraries to extract text and speaker information.
+"""
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from stable_whisper import load_model
@@ -29,10 +34,10 @@ class CombinedProcessor:
             stable_model_size: Size of stable-ts model (tiny, base, small, medium, large)
         """
         try:
-            # Initialize stable-ts
+            # Initialize stable-ts for transcription
             self.transcriber = load_model(stable_model_size)
 
-            # Initialize pyannote pipeline
+            # Initialize pyannote pipeline for speaker diariziation
             self.diarizer = Pipeline.from_pretrained(
                 "pyannote/speaker-diarization-3.1",
                 use_auth_token=auth_token

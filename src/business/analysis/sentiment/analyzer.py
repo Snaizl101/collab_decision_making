@@ -1,9 +1,14 @@
+"""
+Sentiment analyzer module.
+Analyzes emotional tone and sentiment throughout discussions.
+Tracks sentiment over time and by speaker.
+"""
 from typing import List, Dict, Any
 from dataclasses import dataclass
 from datetime import datetime
-from business.analysis.base import LLMClientInterface
-from business.analysis.exceptions import AnalysisError
-from business.audio.models import TranscriptionSegment
+from src.business.analysis.base import LLMClientInterface
+from src.business.analysis.exceptions import AnalysisError
+from src.business.audio.models import TranscriptionSegment
 
 
 @dataclass

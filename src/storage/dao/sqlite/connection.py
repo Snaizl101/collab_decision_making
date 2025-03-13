@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Optional
 import logging
 
-from storage.dao.exceptions import ConnectionError, QueryError, DAOError
+from src.storage.dao.exceptions import ConnectionError, QueryError, DAOError
 
 
 class SQLiteConnection:

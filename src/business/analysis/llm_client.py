@@ -1,3 +1,8 @@
+"""
+LLM client module.
+Provides interface to LLM services for various analysis tasks.
+Manages API communication and response parsing.
+"""
 from typing import Dict, Any, List
 from pathlib import Path
 import os

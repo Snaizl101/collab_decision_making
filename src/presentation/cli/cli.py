@@ -14,7 +14,7 @@ from src.business.pipeline import Pipeline
 from src.business.audio.processors import CombinedProcessor
 from src.business.analysis.topic.analyzer import TopicAnalyzer
 from src.business.analysis.sentiment.analyzer import SentimentAnalyzer
-from business.analysis.llm_client import TogetherLLMClient
+from src.business.analysis.llm_client import TogetherLLMClient
 from src.storage.dao.sqlite.sqlite_dao import SQLiteDAO
 from src.storage.files.local_storage import LocalFileStorage
 from src.presentation.reports.generators import HTMLReportGenerator
@@ -138,8 +138,8 @@ class CLI(UserInterface):
         """Start audio analysis with enhanced error handling"""
         try:
             report_path = asyncio.run(self._run_pipeline(audio_path))
-            self.console.print(f"[green]Analysis complete![/green]")
-            self.console.print(f"Report generated at: {report_path}")
+            # self.console.print(f"[green]Analysis complete![/green]")
+            # self.console.print(f"Report generated at: {report_path}")
             return str(report_path)
         except Exception as e:
             self.console.print(f"[red]Error during analysis: {str(e)}[/red]")

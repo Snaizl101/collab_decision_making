@@ -1,4 +1,10 @@
+"""
+Pipeline module.
+Coordinates the entire analysis workflow from audio processing to report generation.
+Manages data flow between business layer components and storage.
+"""
 import logging
+
 import json
 from datetime import datetime
 from pathlib import Path
