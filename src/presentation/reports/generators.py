@@ -40,7 +40,7 @@ class HTMLReportGenerator(ReportGeneratorInterface):
             viz_data = self._prepare_visualization_data(data)
 
             # Render template
-            template = self.env.get_template('discussion_analysis.html')
+            template = self.env.get_template('analysis_report_templete.html')
             html = template.render(
                 data=data,
                 viz_data=viz_data,
